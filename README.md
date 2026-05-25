@@ -28,7 +28,9 @@ QuickTrack is built for environments where internet connectivity is unreliable. 
 
 | Dashboard | Equipment List | Equipment Detail |
 |-----------|---------------|-----------------|
-| _(add screenshot)_ | _(add screenshot)_ | _(add screenshot)_ |
+| <img width="1170" height="2532" alt="main_dashboard" src="https://github.com/user-attachments/assets/15b2a778-627f-464a-b90e-b22bb64fc49a" />
+ | <img width="1170" height="2532" alt="equipment" src="https://github.com/user-attachments/assets/7a5b0ac0-6366-4490-acc9-11605a93af92" />
+ | <img width="1170" height="2532" alt="details" src="https://github.com/user-attachments/assets/33201a71-e2b4-4ed5-9335-81bd2d38dbeb" /> |
 
 ---
 
