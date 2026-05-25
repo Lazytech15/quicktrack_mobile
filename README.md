@@ -1,17 +1,34 @@
 # QuickTrack Mobile
 
-A cross-platform React Native (Expo) app for field technicians to log and sync equipment status — even without internet.
+A cross-platform React Native app for field technicians to track, inspect, and report on equipment — fully functional offline.
+
+---
+
+## Overview
+
+QuickTrack is built for environments where internet connectivity is unreliable. Technicians can register equipment, log inspection results with photos, and generate PDF reports entirely on-device. When connectivity is restored, the app automatically syncs all pending records to a configurable REST API.
+
+---
 
 ## Features
 
-- **Offline-first** — SQLite local queue stores all data; syncs to REST API on reconnect
-- **Equipment management** — Create, view, and track equipment by category, status, and location
-- **Service logs** — Log equipment check-ins with status, notes, and on-site photos
-- **Camera integration** — Capture photos directly or choose from library (Expo Camera)
-- **PDF reports** — Generate and share equipment reports on-device (expo-print)
-- **Push notifications** — Overdue check alerts and daily reminders (expo-notifications)
-- **Auto-sync** — Polls for connectivity every 30s and flushes the SQLite sync queue
-- **iOS & Android** — Built with Expo for universal deployment
+- **Offline-first** — all data is stored locally in SQLite; the app works fully without a network connection
+- **Equipment management** — register and manage equipment across categories: HVAC, Electrical, Plumbing, Safety, and Mechanical
+- **Service logs** — record inspection results with technician name, status, timestamped notes, and attached photos
+- **Photo capture** — attach photos from the camera or photo library directly to a log entry
+- **PDF reports** — generate a full equipment report (details + service history) on-device and export via the native share sheet
+- **Sync queue** — every write is queued in SQLite and flushed to a REST API on reconnect, with per-item retry tracking and success/failure status
+- **Push notifications** — immediate alert when overdue equipment is detected on app load; configurable daily 8 AM reminder
+- **Overdue tracking** — dashboard and equipment list both surface items past their next-check date
+- **Cross-platform** — runs on iOS and Android via Expo
+
+---
+
+## Screenshots
+
+| Dashboard | Equipment List | Equipment Detail |
+|-----------|---------------|-----------------|
+| _(add screenshot)_ | _(add screenshot)_ | _(add screenshot)_ |
 
 ---
 
@@ -19,15 +36,48 @@ A cross-platform React Native (Expo) app for field technicians to log and sync e
 
 | Package | Purpose |
 |---|---|
-| React Native + Expo | Cross-platform foundation |
-| expo-sqlite | Offline-first local database |
-| @react-native-async-storage/async-storage | Settings & preferences |
-| expo-camera / expo-image-picker | On-site photo capture |
-| expo-print + expo-sharing | PDF report generation & sharing |
-| expo-notifications | Push notifications (overdue + daily) |
-| expo-network | Connectivity detection for auto-sync |
-| @react-navigation/native | Navigation (tabs + stack) |
-| date-fns | Date formatting |
+| `react-native` + `expo` | Cross-platform mobile framework |
+| `expo-sqlite` | Local on-device database |
+| `expo-router` | File-based navigation |
+| `react-navigation` | Stack and tab navigation |
+| `expo-notifications` | Push and scheduled notifications |
+| `expo-print` + `expo-sharing` | PDF generation and native share sheet |
+| `expo-image-picker` + `expo-camera` | Photo capture and library access |
+| `@react-native-async-storage/async-storage` | Persisted user settings |
+| `date-fns` | Date formatting and comparison |
+
+---
+
+## Project Structure
+
+```
+QuickTrack/
+├── App.tsx                          # Root component — DB init, navigation setup
+├── index.js                         # Entry point (registerRootComponent)
+├── src/
+│   ├── screens/
+│   │   ├── DashboardScreen.tsx      # Overview: stats, overdue alert, recent equipment
+│   │   ├── EquipmentListScreen.tsx  # Searchable, filterable equipment list
+│   │   ├── EquipmentDetailScreen.tsx # Equipment info, logs, PDF export
+│   │   ├── AddEquipmentScreen.tsx   # Form to register new equipment
+│   │   ├── LogEntryScreen.tsx       # Form to log an inspection with photos
+│   │   └── SettingsScreen.tsx       # Technician name, API URL, notifications
+│   ├── navigation/
+│   │   └── AppNavigator.tsx         # Bottom tabs + stack navigators
+│   ├── db/
+│   │   ├── database.ts              # SQLite init, schema creation, seed data
+│   │   └── queries.ts               # All read/write queries + sync queue logic
+│   ├── components/
+│   │   └── ui.tsx                   # Shared components: Button, Card, StatusBadge, etc.
+│   ├── hooks/
+│   │   └── useNetworkSync.ts        # Network state + auto-sync on reconnect
+│   └── utils/
+│       ├── theme.ts                 # Colors, spacing, typography, responsive scale helpers
+│       ├── pdfGenerator.ts          # HTML-to-PDF report builder
+│       ├── syncService.ts           # REST API sync queue processor
+│       └── notifications.ts        # Push notification registration and scheduling
+└── assets/                          # App icons and splash screen
+```
 
 ---
 
@@ -35,116 +85,133 @@ A cross-platform React Native (Expo) app for field technicians to log and sync e
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) 18+
-- [Expo CLI](https://docs.expo.dev/get-started/installation/): `npm install -g expo-cli`
-- [Expo Go](https://expo.dev/go) app on your iOS or Android device (for quick testing)
+- Node.js 18+
+- Expo CLI (`npm install -g expo-cli`)
+- Expo Go app on your device, or a simulator
 
-### Install
+### Installation
 
 ```bash
-# Clone / unzip the project
-cd QuickTrackMobile
+# Clone the repo
+git clone https://github.com/your-username/quicktrack-mobile.git
+cd quicktrack-mobile
 
 # Install dependencies
 npm install
 
-# Start the development server
-npx expo start
+# Start the dev server
+npx expo start --clear
 ```
 
-Scan the QR code with **Expo Go** on your phone, or press `i` for iOS simulator / `a` for Android emulator.
+Scan the QR code with Expo Go (Android) or the Camera app (iOS).
+
+### Running on a simulator
+
+```bash
+# iOS (requires Xcode)
+npx expo run:ios
+
+# Android (requires Android Studio)
+npx expo run:android
+```
+
+> **Note:** Push notifications require a physical device and a development build. They are not fully supported in Expo Go as of SDK 53+.
 
 ---
 
-## Project Structure
+## Database Schema
 
-```
-QuickTrackMobile/
-├── App.tsx                         # Entry point, DB init
-├── app.json                        # Expo config
-├── src/
-│   ├── db/
-│   │   ├── database.ts             # SQLite init + seed data
-│   │   └── queries.ts              # All DB read/write functions
-│   ├── screens/
-│   │   ├── DashboardScreen.tsx     # Home with stats + overdue alert
-│   │   ├── EquipmentListScreen.tsx # Search, filter, list
-│   │   ├── EquipmentDetailScreen.tsx # Detail + logs + PDF export
-│   │   ├── LogEntryScreen.tsx      # New log with photos
-│   │   ├── AddEquipmentScreen.tsx  # Add new equipment
-│   │   └── SettingsScreen.tsx      # API URL, tech name, notifications
-│   ├── components/
-│   │   └── ui.tsx                  # Shared components (Button, Card, Badge…)
-│   ├── hooks/
-│   │   └── useNetworkSync.ts       # Connectivity + auto-sync hook
-│   ├── navigation/
-│   │   └── AppNavigator.tsx        # Tab + stack navigator setup
-│   └── utils/
-│       ├── theme.ts                # Colors, spacing, typography tokens
-│       ├── syncService.ts          # REST API sync + AsyncStorage helpers
-│       ├── pdfGenerator.ts         # HTML → PDF report
-│       └── notifications.ts        # Push notification registration + scheduling
-└── assets/                         # App icons and splash (add your own)
-```
+### `equipment`
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | INTEGER | Primary key |
+| `name` | TEXT | Equipment name |
+| `location` | TEXT | Physical location |
+| `serial_number` | TEXT | Optional serial number |
+| `category` | TEXT | HVAC, Electrical, Plumbing, Safety, Mechanical |
+| `status` | TEXT | `active`, `maintenance`, `offline`, `decommissioned` |
+| `last_checked` | TEXT | ISO timestamp of last inspection |
+| `next_check_due` | TEXT | ISO timestamp of next scheduled check |
+| `notes` | TEXT | Free-form notes |
+| `created_at` | TEXT | ISO timestamp |
+| `updated_at` | TEXT | ISO timestamp |
+
+### `equipment_logs`
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | INTEGER | Primary key |
+| `equipment_id` | INTEGER | Foreign key → equipment |
+| `technician` | TEXT | Technician display name |
+| `status` | TEXT | OK, Needs Attention, Critical, Repaired, Inspected |
+| `notes` | TEXT | Inspection notes |
+| `photos` | TEXT | JSON array of local image URIs |
+| `created_at` | TEXT | ISO timestamp |
+| `synced` | INTEGER | `0` = pending, `1` = synced |
+| `sync_attempts` | INTEGER | Number of sync attempts made |
+
+### `sync_queue`
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | INTEGER | Primary key |
+| `table_name` | TEXT | Target table (`equipment` or `equipment_logs`) |
+| `record_id` | INTEGER | ID of the record to sync |
+| `operation` | TEXT | `INSERT` or `UPDATE` |
+| `payload` | TEXT | JSON payload for the API request |
+| `status` | TEXT | `pending`, `completed`, `failed` |
+| `attempts` | INTEGER | Retry count |
+| `last_attempt` | TEXT | ISO timestamp of last attempt |
+
+---
+
+## Sync Architecture
+
+Every create or update operation immediately writes to SQLite and adds an entry to the `sync_queue` table. A background hook (`useNetworkSync`) monitors network state via `expo-network`. When the device comes online, it calls `syncQueue()` which iterates the pending queue and posts each item to the configured REST API endpoint:
+
+- `INSERT` operations → `POST /api/{table-name}`
+- `UPDATE` operations → `PUT /api/{table-name}/{id}`
+
+Successful items are marked `completed`. Failed items are marked `failed` and can be retried. The pending count is shown in the UI via the sync banner and Settings screen.
 
 ---
 
 ## Configuration
 
-### API URL
+In the Settings screen you can set:
 
-Open the **Settings** tab in the app and update the **API Base URL** to point to your server. The sync service will POST new equipment and logs, and PUT updates, to:
+- **Technician name** — shown on all log entries
+- **API base URL** — the REST endpoint to sync data to (e.g. `https://api.yourcompany.com/v1`)
 
-- `POST /equipment` — new equipment
-- `PUT /equipment/:id` — equipment update
-- `POST /equipment-logs` — new log entry
-
-### Technician Name
-
-Set your name in **Settings** — it's saved locally and stamped on every log entry.
-
-### Push Notifications
-
-Toggle notifications on in **Settings**. A physical device is required (simulators don't support push tokens). The app will request permission and schedule a daily 8:00 AM reminder plus an immediate alert whenever overdue equipment is detected.
+Both values are persisted in `AsyncStorage`.
 
 ---
 
-## Building for Production
+## PDF Reports
 
-```bash
-# Install EAS CLI
-npm install -g eas-cli
+Tapping **PDF Report** on any equipment detail screen generates an HTML report on-device using `expo-print`, then opens the native share sheet via `expo-sharing`. The report includes:
 
-# Log in to your Expo account
-eas login
-
-# Configure the build
-eas build:configure
-
-# Build for iOS (requires Apple Developer account)
-eas build --platform ios
-
-# Build for Android
-eas build --platform android
-```
-
-Update `app.json` with your own `bundleIdentifier` (iOS) and `package` (Android) before building.
+- Equipment details (name, location, serial number, category, status, next due date)
+- Full service log history with technician names, timestamps, statuses, notes, and photos
+- Sync status per log entry
+- Generation timestamp
 
 ---
 
-## Demo Data
+## Notifications
 
-The app seeds 5 demo equipment items on first launch so you can explore all features immediately. All demo data is stored locally in SQLite and does not sync until you configure a valid API URL.
+Two notification types are used:
 
----
+| Type | Trigger | Content |
+|---|---|---|
+| Overdue alert | On app load when overdue items exist | Lists affected equipment names |
+| Daily reminder | Every day at 8:00 AM | Prompt to review the day's schedule |
 
-## Portfolio Notes
-
-- **Architecture**: Offline-first with a SQLite sync queue pattern — suitable for any field-service or asset-tracking domain
-- **State management**: React hooks + SQLite as source of truth (no Redux/Zustand needed for this scale)
-- **PDF generation**: Uses expo-print's HTML renderer for fully custom, branded reports
-- **Notifications**: Combines scheduled (daily) and event-driven (overdue) notification patterns
+Both require permission grant on first use. Notifications can be toggled in Settings.
 
 ---
 
-Built with React Native & Expo · 2024
+## License
+
+MIT
